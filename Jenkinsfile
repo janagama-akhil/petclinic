@@ -68,7 +68,7 @@ pipeline {
 				${tomcatStop}
 				${tomcatStart}
 				'''
-            				}
+            				//}
             			}
 			}
 		}
