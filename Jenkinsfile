@@ -1,68 +1,78 @@
 pipeline {
-	agent { label 'master' }
-
-	tools {
-		maven 'M3.6.3'
-	}
-	
+	agent { label 'myagent' }
 	environment {
-		def tomcatDevIp = '13.72.74.55'
-		def tomcatHome = '/home/sonar/tomcat8'
-        def tomcatStart = "${tomcatHome}/bin/startup.sh"
-        def tomcatStop = "${tomcatHome}/bin/shutdown.sh"
+		def tomcatDevIp = '18.188.216.38'
+		def tomcatHome = '/home/ec2-user/apache-tomcat-8.5.61'
+        	def tomcatStart = "${tomcatHome}/bin/startup.sh"
+        	def tomcatStop = "${tomcatHome}/bin/shutdown.sh"
 	}
-
 	stages {
-		stage('Checkout') {
-			steps {
-				git url: 'https://github.com/akmaharshi/petclinic.git'
-			}
-		}
-
-		stage('Maven Build') {
-			input {
-                message "Should we continue?"
-                ok "Yes, Proceed"
-                parameters {
-                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-                }
-            }
-			steps {
-				echo "Hello, ${PERSON}, nice to meet you."
-				sh label: '', script: 'mvn clean package'
-			}
-		}
-		stage('Post Build Actions') {
-			parallel {
-				stage('Archive Artifacts') {
+    	// stage('My Parallel stages') {
+    	//	parallel {
+    			/* stage('SonarQube analysis') { 
+    				steps {
+						withSonarQubeEnv('Sonar') { 
+						sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.3.0.603:sonar ' + 
+						'-Dsonar.projectKey=com.petclinic:all:master ' +
+						'-Dsonar.language=java ' +
+						'-Dsonar.sources=. ' +
+						'-Dsonar.tests=. '
+						}
+					}
+				} */
+				stage('Build') {
 					steps {
-						archiveArtifacts artifacts: 'target/*.?ar', followSymlinks: false
+    					sh 'mvn clean package'
+    				}
+				}
+			//}
+		//}
+
+		/* stage('Check Quality gates') {
+			steps {
+				script {
+					timeout(time: 1, unit: 'HOURS') {
+					sleep 30
+					def qg = waitForQualityGate() 
+						if (qg.status != 'OK') {
+							error "Pipeline aborted due to quality gate failure: ${qg.status}"
+						}
 					}
 				}
-
-				stage('Test Results') {
+			}
+		} */
+		stage('Post Build Actions') {
+    		parallel {
+				stage('Archive') {
+					steps {
+						archiveArtifacts artifacts: 'target/*.?ar', followSymlinks: false
+					}	
+				}
+				stage('Unit tests') {
 					steps {
 						junit 'target/surefire-reports/*.xml'
 					}
 				}
-				
-				stage('Nexus Uploader') {
-					steps {
-						nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexuscred', groupId: 'org.springframework.samples', nexusUrl: '23.96.98.151:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-releases', version: "4.2.${BUILD_NUMBER}"
-					}
-				}
-				
-				stage('Deploy') {
-					steps {
-                                		sh "scp -o StrictHostKeyChecking=no target/petclinic.war sonar@${tomcatDevIp}:/home/sonar/tomcat8/webapps/myweb.war"
-                                		sh "ssh sonar@${tomcatDevIp} ${tomcatStop}"
-                                		sh "ssh sonar@${tomcatDevIp} ${tomcatStart}"
-                            		}
-				}
+			}
+		}
+		stage('Deploy') {
+			steps {
+				script {
+					//sshagent (credentials: ['tomcat']) {
+					//	sh "scp -o StrictHostKeyChecking=no target/petclinic.war ec2-user@${tomcatDevIp}:${tomcatHome}/webapps/petclinic.war"
+                			//	sh "ssh sonar@${tomcatDevIp} ${tomcatStop}"
+                			//	sh "ssh sonar@${tomcatDevIp} ${tomcatStart}"
+					
+				sh '''
+				cp -r target/petclinic.war ${tomcatHome}/webapps/petclinic.war
+				${tomcatStop}
+				${tomcatStart}
+				'''
+            				//}
+            			}
 			}
 		}
 	}
-
 	post {
 		success {
 			notify('Success')
@@ -74,14 +84,12 @@ pipeline {
 			notify('Aborted')
 		}
 	}
-
 }
 
-def notify(status){
-    emailext (
-      to: "anilmaharshi.p@gmail.com",
-      subject: "${status}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-      body: """<p>${status}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]':</p>
-        <p>Check console output at <a href='${env.BUILD_URL}'>${env.JOB_NAME} [${env.BUILD_NUMBER}]</a></p>""",
-    )
+def notify(status) {
+	emailext (
+		to: 'udu6767@gmail.conm',
+		subject: "JOB:${env.JOB_NAME} with Build: ${env.BUILD_ID} ${status}", 
+		body: "${status} - ${env.BUILD_URL}"
+	)
 }
