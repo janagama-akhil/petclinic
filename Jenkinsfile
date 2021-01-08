@@ -1,8 +1,5 @@
 pipeline {
 	agent any
-	tools {
-		maven 'M3.6'
-	}
 	stages {
     	// stage('My Parallel stages') {
     	//	parallel {
