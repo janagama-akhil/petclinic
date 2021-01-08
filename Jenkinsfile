@@ -62,7 +62,7 @@ pipeline {
 			notify('Aborted')
 		}
 	}
-
+}
 
 def notify(status) {
 	emailext (
