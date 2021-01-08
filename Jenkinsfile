@@ -1,10 +1,7 @@
 pipeline {
-	agent { label 'myagent' }
-	environment {
-		def tomcatDevIp = '18.188.216.38'
-		def tomcatHome = '/home/ec2-user/apache-tomcat-8.5.61'
-        	def tomcatStart = "${tomcatHome}/bin/startup.sh"
-        	def tomcatStop = "${tomcatHome}/bin/shutdown.sh"
+	agent any
+	tools {
+		maven 'M3.6'
 	}
 	stages {
     	// stage('My Parallel stages') {
@@ -53,23 +50,34 @@ pipeline {
 						junit 'target/surefire-reports/*.xml'
 					}
 				}
+				stage('Artifact Uploader') {
+					steps {
+						// nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexusID', groupId: 'org.springframework.samples', nexusUrl: '3.15.181.60:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'releases', version: '4.2'
+					nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexusid', groupId: 'org.springframework.samples', nexusUrl: '3.15.181.60:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'releases', version: "4.2.${BUILD_NUMBER}"
+					}
+				}
 			}
 		}
 		stage('Deploy') {
+			input {
+                		message "Should we continue?"
+                		ok "Yes, we should."
+            		}
 			steps {
-				script {
-					//sshagent (credentials: ['tomcat']) {
-					//	sh "scp -o StrictHostKeyChecking=no target/petclinic.war ec2-user@${tomcatDevIp}:${tomcatHome}/webapps/petclinic.war"
-                			//	sh "ssh sonar@${tomcatDevIp} ${tomcatStop}"
-                			//	sh "ssh sonar@${tomcatDevIp} ${tomcatStart}"
-					
-				sh '''
-				cp -r target/petclinic.war ${tomcatHome}/webapps/petclinic.war
-				${tomcatStop}
-				${tomcatStart}
-				'''
-            				//}
-            			}
+				// git 'https://github.com/akmaharshi/tomcat-standalone.git'
+				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, 
+                                          extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'ansible']], submoduleCfg: [], 
+        				userRemoteConfigs: [[url: 'https://github.com/janagama-akhil/tomcat-standalone.git']]])
+				
+				//withCredentials([string(credentialsId: 'ansi_vault_pass', variable: 'MYPASS')]) {
+					sh '''
+						//echo $MYPASS
+				          	//echo $MYPASS > ~/.vault_pass.txt
+						//export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass.txt
+						//cd ansible
+						sudo ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" site.yml 
+					'''
+				//}
 			}
 		}
 	}
@@ -88,7 +96,7 @@ pipeline {
 
 def notify(status) {
 	emailext (
-		to: 'udu6767@gmail.conm',
+		to: 'udu6767@gmail.com',
 		subject: "JOB:${env.JOB_NAME} with Build: ${env.BUILD_ID} ${status}", 
 		body: "${status} - ${env.BUILD_URL}"
 	)
