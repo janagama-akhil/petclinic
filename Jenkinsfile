@@ -53,7 +53,7 @@ pipeline {
 				stage('Artifact Uploader') {
 					steps {
 						// nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexusID', groupId: 'org.springframework.samples', nexusUrl: '18.188.206.92:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'releases', version: '4.2'
-					nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexusid', groupId: 'org.springframework.samples', nexusUrl: '3.17.60.125:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'releases', version: "4.2.${BUILD_NUMBER}"
+					nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexusid', groupId: 'org.springframework.samples', nexusUrl: '3.15.181.60:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'releases', version: "4.2.${BUILD_NUMBER}"
 					}
 				}
 			}
@@ -67,17 +67,17 @@ pipeline {
 				// git 'https://github.com/akmaharshi/tomcat-standalone.git'
 				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, 
                                           extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'ansible']], submoduleCfg: [], 
-        				userRemoteConfigs: [[url: 'https://github.com/akmaharshi/tomcat-standalone.git']]])
+        				userRemoteConfigs: [[url: 'https://github.com/janagama-akhil/petclinic.git']]])
 				
-				withCredentials([string(credentialsId: 'ansi_vault_pass', variable: 'MYPASS')]) {
+				//withCredentials([string(credentialsId: 'ansi_vault_pass', variable: 'MYPASS')]) {
 					sh '''
-						echo $MYPASS
-						echo $MYPASS > ~/.vault_pass.txt
-						export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass.txt
-						cd ansible
-						sudo ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" --vault-id ~/.vault_pass.txt site.yml 
+						//echo $MYPASS
+						//echo $MYPASS > ~/.vault_pass.txt
+						//export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass.txt
+						//cd ansible
+						sudo ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" site.yml 
 					'''
-				}
+				//}
 			}
 		}
 	}
@@ -96,7 +96,7 @@ pipeline {
 
 def notify(status) {
 	emailext (
-		to: 'devops.kphb@gmail.com',
+		to: 'udu6767@gmail.com',
 		subject: "JOB:${env.JOB_NAME} with Build: ${env.BUILD_ID} ${status}", 
 		body: "${status} - ${env.BUILD_URL}"
 	)
