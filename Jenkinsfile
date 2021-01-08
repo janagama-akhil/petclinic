@@ -1,40 +1,11 @@
 pipeline {
 	agent any
 	stages {
-    	// stage('My Parallel stages') {
-    	//	parallel {
-    			/* stage('SonarQube analysis') { 
-    				steps {
-						withSonarQubeEnv('Sonar') { 
-						sh 'mvn org.sonarsource.scanner.maven:sonar-maven-plugin:3.3.0.603:sonar ' + 
-						'-Dsonar.projectKey=com.petclinic:all:master ' +
-						'-Dsonar.language=java ' +
-						'-Dsonar.sources=. ' +
-						'-Dsonar.tests=. '
-						}
-					}
-				} */
-				stage('Build') {
-					steps {
-    					sh 'mvn clean package'
-    				}
-				}
-			//}
-		//}
-
-		/* stage('Check Quality gates') {
+		stage('Build') {
 			steps {
-				script {
-					timeout(time: 1, unit: 'HOURS') {
-					sleep 30
-					def qg = waitForQualityGate() 
-						if (qg.status != 'OK') {
-							error "Pipeline aborted due to quality gate failure: ${qg.status}"
-						}
-					}
-				}
-			}
-		} */
+				sh 'mvn clean package'
+    			}
+		}
 		stage('Post Build Actions') {
     		parallel {
 				stage('Archive') {
@@ -61,7 +32,6 @@ pipeline {
                 		ok "Yes, we should."
             		}
 			steps {
-				// git 'https://github.com/akmaharshi/tomcat-standalone.git'
 				checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, 
                                           extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'ansible']], submoduleCfg: [], 
         				userRemoteConfigs: [[url: 'https://github.com/janagama-akhil/tomcat-standalone.git']]])
