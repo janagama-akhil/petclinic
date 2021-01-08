@@ -3,29 +3,35 @@ pipeline {
 	stages {
 		stage('Build') {
 			steps {
-				sh 'mvn clean package'
-    			}
+			sh 'mvn clean package'
+    		}
 		}
-		stage('Post Build Actions') {
-    		parallel {
-				stage('Archive') {
-					steps {
-						archiveArtifacts artifacts: 'target/*.?ar', followSymlinks: false
-					}	
-				}
-				stage('Unit tests') {
-					steps {
-						junit 'target/surefire-reports/*.xml'
-					}
-				}
-				stage('Artifact Uploader') {
-					steps {
-						
-					nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '', file: 'target/petclinic.war', type: 'war']], credentialsId: 'nexusid', groupId: 'org.springframework.samples', nexusUrl: '3.15.181.60:8081/nexus', nexusVersion: 'nexus2', protocol: 'http', repository: 'releases', version: "4.2.${BUILD_NUMBER}"
-					}
-				}
+		
+		stage('Archive') {
+			steps {
+				archiveArtifacts artifacts: 'target/*.?ar', followSymlinks: false
+         	}	
+		}
+		stage('Unit tests') {
+			steps {
+				junit 'target/surefire-reports/*.xml'
 			}
 		}
+		stage('Artifact Uploader') {
+			steps {
+						
+				nexusArtifactUploader artifacts: [[artifactId: 'spring-petclinic', classifier: '',
+				file: 'target/petclinic.war', type: 'war']], 
+				credentialsId: 'nexusid', groupId: 'org.springframework.samples', 
+				nexusUrl: '3.15.181.60:8081/nexus', 
+			 	nexusVersion: 'nexus2', 
+				protocol: 'http', 
+				repository: 'releases', 
+				version: "4.2.${BUILD_NUMBER}"
+			}
+		}
+	}
+		
 		stage('Deploy') {
 			input {
                 		message "Should we continue?"
@@ -44,7 +50,7 @@ pipeline {
 				
 			}
 		}
-	}
+}
 	post {
 		success {
 			notify('Success')
@@ -56,7 +62,7 @@ pipeline {
 			notify('Aborted')
 		}
 	}
-}
+
 
 def notify(status) {
 	emailext (
