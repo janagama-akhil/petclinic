@@ -66,8 +66,11 @@ pipeline {
                                           extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'ansible']], submoduleCfg: [], 
         				userRemoteConfigs: [[url: 'https://github.com/janagama-akhil/petclinic.git']]])
 				
-				
-					sh 'sudo ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" site.yml'
+				        
+					sh '''
+					    cd tomcat-standalone
+					    sudo ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" site.yml
+					   '''
 				
 			}
 		}
