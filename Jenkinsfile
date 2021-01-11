@@ -1,7 +1,6 @@
 pipeline {
 	agent any 
-
-		stages {
+	    stages {
 			stage('build') {
 				steps {
 					sh 'mvn clean package'
@@ -23,7 +22,7 @@ pipeline {
 			        classifier: '', file: 'target/petclinic.war', type: 'war']],
 					credentialsId: 'nexusid',
 					groupId: 'org.springframework.samples',
-					nexusUrl: '3.15.181.60:8081/nexus',
+					nexusUrl: '3.16.163.13:8081/nexus',
 					nexusVersion: 'nexus2',
 					protocol: 'http',
 					repository: 'releases',
@@ -38,15 +37,19 @@ pipeline {
             		}
            		steps {
            			checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, 
-                    		extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'ansible']], submoduleCfg: [], 
+                    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'tomcat-standalone']], submoduleCfg: [], 
         			userRemoteConfigs: [[url: 'https://github.com/janagama-akhil/tomcat-standalone.git']]])
-
+                   
+                   withCredentials([string(credentialsId: 'ansi_vault_pass', variable: 'MYPASS')]) {
         			sh '''
-                    	         	cd tomcat-standalone
-                     	 		sudo ansible-playbook -i production -e "BUILD_No=${BUILD_NUMBER}" site.yml
-        			   '''
-
-           			}
+                    	echo $MYPASS
+						echo $MYPASS > ~/.vault_pass.txt
+						export ANSIBLE_VAULT_PASSWORD_FILE=~/.vault_pass.txt
+						cd tomcat-standalone
+						ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" --vault-id ~/.vault_pass.txt site.yml 
+		              '''
+                   }
+           		}
 			}
 		}
 
