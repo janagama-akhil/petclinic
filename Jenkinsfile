@@ -50,7 +50,7 @@ pipeline {
 						sudo ansible-playbook -i production -e "BUILD_NO=${BUILD_NUMBER}" site.yml        
 			          
 				 '''
-		      		
+				}
 				
            		    }
 			}
