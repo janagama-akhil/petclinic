@@ -22,7 +22,7 @@ pipeline {
 			        classifier: '', file: 'target/petclinic.war', type: 'war']],
 					credentialsId: 'nexusid',
 					groupId: 'org.springframework.samples',
-					nexusUrl: '18.220.150.232:8081/nexus',
+					nexusUrl: '3.131.96.72:8081/nexus',
 					nexusVersion: 'nexus2',
 					protocol: 'http',
 					repository: 'releases',
